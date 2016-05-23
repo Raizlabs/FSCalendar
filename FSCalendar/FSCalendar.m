@@ -91,6 +91,7 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
 @property (readonly, nonatomic) FSCalendarOrientation currentCalendarOrientation;
 
 @property (readonly, nonatomic) id<FSCalendarDelegateAppearance> delegateAppearance;
+@property (strong, nonatomic) UIView *weekSelectionView;
 
 - (void)orientationDidChange:(NSNotification *)notification;
 
@@ -544,6 +545,9 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
         return NO;
     }
     NSDate *targetDate = [self dateForIndexPath:indexPath];
+  
+    [self collectionView:collectionView highLightWeekForIndexPath:indexPath];
+
     if ([self isDateSelected:targetDate]) {
         // 这个if几乎不会调用到
         if (self.allowsMultipleSelection) {
@@ -1710,6 +1714,38 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
     NSInteger currentWeekday = [self weekdayOfDate:month];
     NSInteger number = ((currentWeekday- _firstWeekday) + 7) % 7 ?: (7 * (!self.floatingMode&&self.showsPlaceholders));
     return number;
+}
+
+- (void )collectionView:(UICollectionView *)collectionView highLightWeekForIndexPath:(NSIndexPath *)indexPath
+{
+    NSDate *targetDate = [self dateForIndexPath:indexPath];
+    NSUInteger rows = indexPath.item % 6;
+    NSInteger section = [self monthsFromDate:[self beginingOfMonthOfDate:_minimumDate] toDate:targetDate];
+    NSDate *firstDateOfWeek = [self dateForIndexPath:[NSIndexPath indexPathForRow:rows inSection:section]];
+    NSIndexPath *firstCellIndexPath = [self indexPathForDate:firstDateOfWeek];
+    FSCalendarCell *firstCell = (FSCalendarCell *)[collectionView cellForItemAtIndexPath:firstCellIndexPath];
+    NSDate *lastDateOfWeek = [self dateByAddingDays:6 toDate:firstDateOfWeek];
+    NSIndexPath *lastCellIndexPath = [self indexPathForDate:lastDateOfWeek];
+    FSCalendarCell *lastCell = (FSCalendarCell *)[collectionView cellForItemAtIndexPath:lastCellIndexPath];
+    NSLog([NSString stringWithFormat:@"Rows: %lu, section: %lu, IndexPath: %@", (unsigned long)rows, (unsigned long)section, indexPath]);
+    NSLog([NSString stringWithFormat:@"FirstDateOfWeek: %@, LastDateOfWeek: %@, firstCell:%@, lastCell: %@", firstDateOfWeek, lastDateOfWeek, firstCell, lastCell]);
+  
+    CGRect viewRect = CGRectMake(firstCell.frame.origin.x, firstCell.frame.origin.y, (lastCell.frame.origin.x + lastCell.frame.size.width) - firstCell.frame.origin.x, firstCell.frame.size.height);
+
+    CGRect offSet = CGRectOffset(viewRect, 0, -3);
+    offSet = CGRectInset(offSet, 5, 0);
+    if (self.weekSelectionView != nil) {
+        [self.weekSelectionView removeFromSuperview];
+        self.weekSelectionView = nil;
+    }
+    self.weekSelectionView = [[UIView alloc] initWithFrame:offSet];
+    self.weekSelectionView.backgroundColor = [UIColor clearColor];
+    self.weekSelectionView.userInteractionEnabled = NO;
+    self.weekSelectionView.layer.borderColor = [UIColor blackColor].CGColor;
+    self.weekSelectionView.layer.cornerRadius = self.weekSelectionView.frame.size.height / 2;
+    self.weekSelectionView.layer.borderWidth = 1.0;
+  
+    [collectionView addSubview:self.weekSelectionView];
 }
 
 #pragma mark - Delegate
