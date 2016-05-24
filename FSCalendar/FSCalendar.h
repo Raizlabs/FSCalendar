@@ -204,6 +204,17 @@ NS_ASSUME_NONNULL_BEGIN
 - (FSCalendarCellShape)calendar:(FSCalendar *)calendar appearance:(FSCalendarAppearance *)appearance cellShapeForDate:(NSDate *)date;
 
 /**
+ *  Asks the delegate what color should be used for the border around the Week View Highlight
+ *
+ *  @param calendar    Current Calendar object
+ *  @param appearance  FSCalendarAppearance object
+ *  @param borderColor UIColor that represents the current border color
+ *
+ *  @return If the user implements this delegate then it will return the UIColor that for the border
+ */
+- (nullable UIColor *)calendar:(FSCalendar *)calendar appearance:(FSCalendarAppearance *)appearance borderColorForWeekHighlight:(UIColor *)borderColor;
+
+/**
  * These functions are deprecated
  */
 - (FSCalendarCellStyle)calendar:(FSCalendar *)calendar appearance:(FSCalendarAppearance *)appearance cellStyleForDate:(NSDate *)date FSCalendarDeprecated(-calendar:appearance:cellShapeForDate:);
