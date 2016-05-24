@@ -107,6 +107,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)calendar:(FSCalendar *)calendar shouldSelectDate:(NSDate *)date;
 
 /**
+ *  Asks the delegate if the Calendar may enable highlight for the specified week for the date
+ *
+ *  @param controller the calendarView Controller
+ *  @param date       the date (Midnight GMT)
+ *
+ *  @return YES if the calendar can select the highlight the week, NO otherwise.
+ */
+- (BOOL)calendar:(FSCalendar *)calendar isEnabledWeekHightlight:(NSDate *)date;
+
+/**
  * Tells the delegate a date in the calendar is selected by tapping.
  */
 - (void)calendar:(FSCalendar *)calendar didSelectDate:(NSDate *)date;

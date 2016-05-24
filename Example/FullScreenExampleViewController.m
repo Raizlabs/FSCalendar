@@ -40,8 +40,8 @@
     calendar.dataSource = self;
     calendar.delegate = self;
     calendar.pagingEnabled = NO; // important
-    calendar.allowsMultipleSelection = YES;
-    calendar.firstWeekday = 2;
+//    calendar.allowsMultipleSelection = YES;
+    calendar.firstWeekday = 5;
     calendar.appearance.caseOptions = FSCalendarCaseOptionsWeekdayUsesSingleUpperCase|FSCalendarCaseOptionsHeaderUsesUpperCase;
     [self.view addSubview:calendar];
     self.calendar = calendar;
@@ -104,6 +104,15 @@
 - (void)calendarCurrentPageDidChange:(FSCalendar *)calendar
 {
     NSLog(@"did change page %@",[calendar stringFromDate:calendar.currentPage format:@"yyyy-MM"]);
+}
+
+- (BOOL) calendar:(FSCalendar *)calendar isEnabledWeekHightlight:(NSDate *)date
+{
+    return YES;
+}
+- (UIColor *)calendar:(FSCalendar *)calendar appearance:(FSCalendarAppearance *)appearance borderColorForWeekHighlight:(UIColor *)borderColor
+{
+    return [UIColor redColor];
 }
 
 @end

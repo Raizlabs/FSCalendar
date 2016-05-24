@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "FSCalendar.h"
 
-@interface CalendarIdentifierViewController : UIViewController <FSCalendarDataSource,FSCalendarDelegate,UIPickerViewDataSource,UIPickerViewDelegate>
+@interface CalendarIdentifierViewController : UIViewController <FSCalendarDataSource,FSCalendarDelegate,FSCalendarDelegateAppearance, UIPickerViewDataSource,UIPickerViewDelegate>
 
 @property (weak, nonatomic) FSCalendar *calendar;
 @property (weak, nonatomic) UIPickerView *pickerView;

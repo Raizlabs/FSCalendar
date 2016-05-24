@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "FSCalendar.h"
 
-@interface FullScreenExampleViewController : UIViewController <FSCalendarDataSource,FSCalendarDelegate>
+@interface FullScreenExampleViewController : UIViewController <FSCalendarDataSource,FSCalendarDelegate,FSCalendarDelegateAppearance>
 
 @property (weak, nonatomic) FSCalendar *calendar;
 @property (assign, nonatomic) BOOL showsLunar;
