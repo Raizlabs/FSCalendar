@@ -41,7 +41,7 @@
     calendar.delegate = self;
     calendar.pagingEnabled = NO; // important
 //    calendar.allowsMultipleSelection = YES;
-    calendar.firstWeekday = 5;
+    calendar.firstWeekday = 2;
     calendar.appearance.caseOptions = FSCalendarCaseOptionsWeekdayUsesSingleUpperCase|FSCalendarCaseOptionsHeaderUsesUpperCase;
     [self.view addSubview:calendar];
     self.calendar = calendar;
