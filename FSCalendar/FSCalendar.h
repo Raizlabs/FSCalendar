@@ -142,6 +142,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)calendarCurrentPageDidChange:(FSCalendar *)calendar;
 
 /**
+ *  Tells the delegate that a week was highlighted and passes the date of the first day of the week.
+ *
+ *  @param controller the calendarView Controller
+ *  @param date       the date being selected (Midnight GMT).
+ */
+- (void)calendar:(FSCalendar *)calendar didHighlightWeekForDate:(NSDate *)date;
+
+/**
  * These functions are deprecated
  */
 - (void)calendarCurrentScopeWillChange:(FSCalendar *)calendar animated:(BOOL)animated FSCalendarDeprecated(-calendar:boundingRectWillChange:animated:);
@@ -223,6 +231,7 @@ NS_ASSUME_NONNULL_BEGIN
  *  @return If the user implements this delegate then it will return the UIColor that for the border
  */
 - (nullable UIColor *)calendar:(FSCalendar *)calendar appearance:(FSCalendarAppearance *)appearance borderColorForWeekHighlight:(UIColor *)borderColor;
+
 
 /**
  * These functions are deprecated
