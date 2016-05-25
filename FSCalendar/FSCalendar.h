@@ -270,9 +270,9 @@ IB_DESIGNABLE
 @property (strong, nonatomic) NSDate *currentPage;
 
 /**
- *  The Date of the first day of the week that correcsponds to the highlighted week
+ *  The Date of the first day of the week that corresponds to the highlighted week
  *
- * @desc In Month mode, you can have the week of the currently selected day hightlghted, if you do then this
+ * @desc In Month mode, you can have the week of the currently selected day highlighted, if you do then this
  *    date is valid
  */
 @property (strong, nonatomic) NSDate *highlightedWeekDate;

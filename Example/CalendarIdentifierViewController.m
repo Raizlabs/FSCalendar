@@ -32,7 +32,7 @@
     FSCalendar *calendar = [[FSCalendar alloc] initWithFrame:CGRectMake(0, 64, CGRectGetWidth(self.view.frame), height)];
     calendar.dataSource = self;
     calendar.delegate = self;
-  calendar.showsPlaceholders = YES;
+    calendar.showsPlaceholders = YES;
     calendar.appearance.caseOptions = FSCalendarCaseOptionsHeaderUsesUpperCase|FSCalendarCaseOptionsWeekdayUsesUpperCase;
     calendar.backgroundColor = [UIColor whiteColor];
     [self.view addSubview:calendar];
@@ -68,7 +68,7 @@
 
 - (BOOL)calendar:(FSCalendar *)calendar shouldSelectDate:(NSDate *)date
 {
-  return NO;
+    return NO;
 }
 
 - (void)calendarCurrentPageDidChange:(FSCalendar *)calendar
@@ -101,15 +101,12 @@
 
 - (BOOL) calendar:(FSCalendar *)calendar isEnabledWeekHightlight:(NSDate *)date
 {
-  if ([date timeIntervalSince1970] >= [[NSDate date] timeIntervalSince1970]) {
-    return YES;
-  }
-  return NO;
+    return ([date timeIntervalSince1970] >= [[NSDate date] timeIntervalSince1970]);
 }
 
 - (UIColor *)calendar:(FSCalendar *)calendar appearance:(FSCalendarAppearance *)appearance borderColorForWeekHighlight:(UIColor *)borderColor
 {
-  return [UIColor redColor];
+    return [UIColor redColor];
 }
 
 @end
