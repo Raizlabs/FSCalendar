@@ -18,6 +18,9 @@
 #import "FSCalendarDynamicHeader.h"
 #import "FSCalendarCollectionView.h"
 
+NSInteger const kWeekHighlightYValueOffset = 3;
+NSString *const kHighlightWeekNotificationName = @"highlightWeek";
+
 typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
     FSCalendarOrientationLandscape,
     FSCalendarOrientationPortrait
@@ -91,6 +94,8 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
 @property (readonly, nonatomic) FSCalendarOrientation currentCalendarOrientation;
 
 @property (readonly, nonatomic) id<FSCalendarDelegateAppearance> delegateAppearance;
+@property (strong, nonatomic) UIView *weekSelectionView;
+@property (strong, nonatomic) UIColor *borderColorWeekSelectionView;
 
 - (void)orientationDidChange:(NSNotification *)notification;
 
@@ -203,7 +208,8 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
     _orientation = self.currentCalendarOrientation;
     _focusOnSingleSelectedDate = YES;
     _showsPlaceholders = YES;
-    
+    _borderColorWeekSelectionView = [UIColor redColor];
+  
     UIView *contentView = [[UIView alloc] initWithFrame:CGRectZero];
     contentView.backgroundColor = [UIColor clearColor];
     [self addSubview:contentView];
@@ -259,7 +265,8 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
     self.animator.collectionViewLayout = self.collectionViewLayout;
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(orientationDidChange:) name:UIDeviceOrientationDidChangeNotification object:nil];
-    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(highlightWeekNotification:) name:kHighlightWeekNotificationName object:nil];
+  
 }
 
 - (void)dealloc
@@ -534,6 +541,14 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
 - (BOOL)collectionView:(UICollectionView *)collectionView shouldSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
     FSCalendarCell *cell = (FSCalendarCell *)[collectionView cellForItemAtIndexPath:indexPath];
+    if ([self isWeekHighlightEnabled:cell.date]) {
+        [self setWeekHighlightForCell:cell withTargetDate:cell.date];
+    }
+    else {
+        [self.weekSelectionView removeFromSuperview];
+        self.weekSelectionView = nil;
+    }
+
     if (cell.dateIsPlaceholder) {
         if (!_showsPlaceholders) return NO;
         if ([self isDateInRange:cell.date]) {
@@ -714,6 +729,57 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
 - (void)orientationDidChange:(NSNotification *)notification
 {
     self.orientation = self.currentCalendarOrientation;
+}
+
+- (void) setHighlightForDate:(NSDate *)targetDate
+{
+    if ([self isWeekHighlightEnabled:targetDate]) {
+        if ([self.highlightedWeekDate isEqualToDate:[self beginingOfWeekOfDate:targetDate]]) {
+            return;
+        }
+        // When are going to highlight a week, we care about the start date
+        // of that week and the end day of the week; it could be that the selected
+        // day was actually in another section, but when shouldSelectDate is NO
+        // we want to hightlight that week, so we have to see which
+        // is the valid cell to use.
+        NSDate *firstDayOfWeek = [self beginingOfWeekOfDate:targetDate];
+        NSDate *lastDayOfWeek = [self dateByAddingDays:6 toDate:firstDayOfWeek];
+        NSInteger currentSection = [self monthsFromDate:[self beginingOfMonthOfDate:_minimumDate] toDate:_currentPage];
+        NSInteger firstDaySection = [self monthsFromDate:[self beginingOfMonthOfDate:_minimumDate] toDate:firstDayOfWeek];
+        NSIndexPath *indexPath = indexPath = [self indexPathForDate:firstDayOfWeek];
+        // If the section of the first day is outside of the month then we use the lastDay, otherwise
+        // we can use the last day of the week - we need a cell so we can calculate where the week outline goes.
+        if (firstDaySection < currentSection) {
+            indexPath = [self indexPathForDate:lastDayOfWeek];
+        }
+        else {
+            indexPath = [self indexPathForDate:firstDayOfWeek];
+        }
+        [self collectionView:self.collectionView highLightWeekForIndexPath:indexPath];
+    }
+    else {
+        [self.weekSelectionView removeFromSuperview];
+        self.weekSelectionView = nil;
+    }
+  
+}
+- (void)highlightWeekNotification:(NSNotification *)notification
+{
+    NSDate *targetDate = [[notification userInfo] objectForKey:@"targetDate"];
+    NSDate *firstOfWeek = [self beginingOfWeekOfDate:targetDate];
+    NSDate *lastOfWeek = [self dateByAddingDays:6 toDate:firstOfWeek];
+    if (self.weekSelectionView != nil) {
+        NSTimeInterval currentWeek = self.highlightedWeekDate.timeIntervalSince1970;
+        
+        if (currentWeek >= firstOfWeek.timeIntervalSince1970 && currentWeek <= lastOfWeek.timeIntervalSince1970) {
+          _highlightedWeekDate = nil;
+          [self setHighlightForDate:targetDate];
+          return;
+        }
+    }
+    if (![self isDateInDifferentPage:targetDate]) {
+        [self setHighlightForDate:targetDate];
+    }
 }
 
 #pragma mark - Properties
@@ -1189,6 +1255,11 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
                     }
                     [_collectionView selectItemAtIndexPath:targetIndexPath animated:YES scrollPosition:UICollectionViewScrollPositionNone];
                     [self collectionView:_collectionView didSelectItemAtIndexPath:targetIndexPath];
+
+                    FSCalendarCell *cell = (FSCalendarCell *)[_collectionView cellForItemAtIndexPath:targetIndexPath];
+                    if (cell != nil) {
+                        [self setWeekHighlightForCell:cell withTargetDate:cell.date];
+                    }
                 }
             } else {
                 return;
@@ -1712,6 +1783,56 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
     return number;
 }
 
+- (void) setWeekHighlightForCell:(FSCalendarCell *)targetCell withTargetDate:(NSDate *)targetDate
+{
+    NSAssert(targetCell != nil, @"Invalid Target Cell");
+    NSAssert(targetDate != nil, @"Invalid Target Date");
+  
+    CGRect viewRect = CGRectMake(_collectionView.contentOffset.x, targetCell.frame.origin.y - kWeekHighlightYValueOffset, _collectionView.frame.size.width, targetCell.frame.size.height);
+    CGRect offSetViewRect = CGRectInset(viewRect, 5, 1);
+
+    if (self.weekSelectionView != nil) {
+        [self.weekSelectionView removeFromSuperview];
+        self.weekSelectionView = nil;
+    }
+    
+    self.highlightedWeekDate = [self beginingOfWeekOfDate:targetDate];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(calendar:didHighlightWeekForDate:)]) {
+        [self.delegate calendar:self didHighlightWeekForDate:self.highlightedWeekDate];
+    }
+    self.weekSelectionView = [self createHighlightWeekView:offSetViewRect withTargetDate:targetDate];
+    [_collectionView addSubview:self.weekSelectionView];
+}
+
+- (UIView *)createHighlightWeekView:(CGRect)viewRect withTargetDate:(NSDate *)targetDate
+{
+    UIView *weekView = [[UIView alloc] initWithFrame:viewRect];
+    NSAssert(weekView != nil, @"Invalid UIView!");
+  
+    weekView.backgroundColor = [UIColor clearColor];
+    weekView.userInteractionEnabled = NO;
+  
+    UIColor *borderColor = [self borderColorForWeekHighlight];
+    weekView.layer.borderColor = borderColor.CGColor;
+    weekView.layer.cornerRadius = weekView.frame.size.height / 2;
+    weekView.layer.borderWidth = 1.0;
+
+    return weekView;
+}
+
+
+- (void )collectionView:(UICollectionView *)collectionView highLightWeekForIndexPath:(NSIndexPath *)indexPath
+{
+    NSDate *targetDate = [self dateForIndexPath:indexPath];
+    NSAssert(targetDate != nil, @"Invalid Target Date!");
+    FSCalendarCell *targetCell = (FSCalendarCell *)[collectionView cellForItemAtIndexPath:indexPath];
+    if (targetCell == nil) {
+      return;
+    }
+
+    [self setWeekHighlightForCell:targetCell withTargetDate:targetDate];
+}
+
 #pragma mark - Delegate
 
 - (BOOL)shouldSelectDate:(NSDate *)date
@@ -1720,6 +1841,17 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
         return [_delegate calendar:self shouldSelectDate:date];
     }
     return YES;
+}
+
+- (BOOL) isWeekHighlightEnabled:(NSDate *)date
+{
+    if (date == nil) {
+        return NO;
+    }
+    if (_delegate && [_delegate respondsToSelector:@selector(calendar:isEnabledWeekHightlight:)]) {
+        return [_delegate calendar:self isEnabledWeekHightlight:date];
+    }
+    return NO;
 }
 
 - (void)didSelectDate:(NSDate *)date
@@ -1756,6 +1888,41 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
         [_delegate calendarCurrentMonthDidChange:self];
     }
 #pragma GCC diagnostic pop
+  
+    [self checkForWeekHiglightRedraw];
+}
+
+- (void) checkForWeekHiglightRedraw
+{
+    if (self.highlightedWeekDate != nil) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(500 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+            // We have to validate the potentialSelectedDate one more time as it could be set to nil during the wait.
+            if (self.highlightedWeekDate != nil) {
+                  NSDate *targetDate = [self getDateForNewPage:self.highlightedWeekDate];
+                  if (targetDate) {
+                      NSNotification *notification = [NSNotification notificationWithName:kHighlightWeekNotificationName object:self userInfo:@{@"targetDate" : targetDate}];
+                      [[NSNotificationQueue defaultQueue] enqueueNotification:notification postingStyle:NSPostWhenIdle];
+                  }
+            }
+        });
+    }
+}
+
+- (NSDate *) getDateForNewPage:(NSDate *)startingDate
+{
+    NSDate *targetDate = nil;
+    
+    NSDate *lastDayOfweek = [self dateByAddingDays:6 toDate:self.highlightedWeekDate];
+    if (![self isDateInDifferentPage:self.highlightedWeekDate]) {
+        targetDate = self.highlightedWeekDate;
+    }
+    if (targetDate == nil) {
+        if (!([self isDateInDifferentPage:lastDayOfweek])) {
+            targetDate = lastDayOfweek;
+        }
+    }
+    
+    return  targetDate;
 }
 
 - (UIColor *)preferredFillDefaultColorForDate:(NSDate *)date
@@ -1878,6 +2045,15 @@ typedef NS_ENUM(NSUInteger, FSCalendarOrientation) {
     return FSCalendarCellShapeCircle;
 }
 
+- (UIColor *)borderColorForWeekHighlight
+{
+    if (self.delegateAppearance && [self.delegateAppearance respondsToSelector:@selector(calendar:appearance:borderColorForWeekHighlight:)]) {
+        self.borderColorWeekSelectionView = [self.delegateAppearance calendar:self appearance:self.appearance borderColorForWeekHighlight:self.borderColorWeekSelectionView];
+          return self.borderColorWeekSelectionView;
+    }
+    
+    return self.borderColorWeekSelectionView;
+}
 
 - (BOOL)boundingRectWillChange:(BOOL)animated
 {

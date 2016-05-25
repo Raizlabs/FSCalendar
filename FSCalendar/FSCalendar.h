@@ -107,6 +107,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)calendar:(FSCalendar *)calendar shouldSelectDate:(NSDate *)date;
 
 /**
+ *  Asks the delegate if the Calendar may enable highlight for the specified week for the date
+ *
+ *  @param controller the calendarView Controller
+ *  @param date       the date (Midnight GMT)
+ *
+ *  @return YES if the calendar can select the highlight the week, NO otherwise.
+ */
+- (BOOL)calendar:(FSCalendar *)calendar isEnabledWeekHightlight:(NSDate *)date;
+
+/**
  * Tells the delegate a date in the calendar is selected by tapping.
  */
 - (void)calendar:(FSCalendar *)calendar didSelectDate:(NSDate *)date;
@@ -130,6 +140,14 @@ NS_ASSUME_NONNULL_BEGIN
  * Tells the delegate the calendar is about to change the current page.
  */
 - (void)calendarCurrentPageDidChange:(FSCalendar *)calendar;
+
+/**
+ *  Tells the delegate that a week was highlighted and passes the date of the first day of the week.
+ *
+ *  @param controller the calendarView Controller
+ *  @param date       the date being selected (Midnight GMT).
+ */
+- (void)calendar:(FSCalendar *)calendar didHighlightWeekForDate:(NSDate *)date;
 
 /**
  * These functions are deprecated
@@ -204,6 +222,18 @@ NS_ASSUME_NONNULL_BEGIN
 - (FSCalendarCellShape)calendar:(FSCalendar *)calendar appearance:(FSCalendarAppearance *)appearance cellShapeForDate:(NSDate *)date;
 
 /**
+ *  Asks the delegate what color should be used for the border around the Week View Highlight
+ *
+ *  @param calendar    Current Calendar object
+ *  @param appearance  FSCalendarAppearance object
+ *  @param borderColor UIColor that represents the current border color
+ *
+ *  @return If the user implements this delegate then it will return the UIColor that for the border
+ */
+- (nullable UIColor *)calendar:(FSCalendar *)calendar appearance:(FSCalendarAppearance *)appearance borderColorForWeekHighlight:(UIColor *)borderColor;
+
+
+/**
  * These functions are deprecated
  */
 - (FSCalendarCellStyle)calendar:(FSCalendar *)calendar appearance:(FSCalendarAppearance *)appearance cellStyleForDate:(NSDate *)date FSCalendarDeprecated(-calendar:appearance:cellShapeForDate:);
@@ -238,6 +268,14 @@ IB_DESIGNABLE
  * @desc In week mode, current page represents the current visible week; In month mode, it means current visible month.
  */
 @property (strong, nonatomic) NSDate *currentPage;
+
+/**
+ *  The Date of the first day of the week that corresponds to the highlighted week
+ *
+ * @desc In Month mode, you can have the week of the currently selected day highlighted, if you do then this
+ *    date is valid
+ */
+@property (strong, nonatomic) NSDate *highlightedWeekDate;
 
 /**
  * The locale of month and weekday symbols. Change it to display them in your own language.

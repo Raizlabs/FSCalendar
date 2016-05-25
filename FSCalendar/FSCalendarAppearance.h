@@ -196,6 +196,14 @@ typedef NS_OPTIONS(NSUInteger, FSCalendarCaseOptions) {
 @property (assign, nonatomic) FSCalendarCaseOptions caseOptions;
 
 /**
+ * The case options manage the case of month label and weekday symbols.
+ *
+ * @see FSCalendarCaseOptions
+ */
+@property (strong, nonatomic) UIColor *weekHighlightBorderColor;
+
+
+/**
  * A Boolean value indicates whether the calendar should adjust font size by its content size.
  *
  * @see titleFont
